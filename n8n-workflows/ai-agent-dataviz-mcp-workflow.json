@@ -1,0 +1,397 @@
+{
+    "name": "AI Dataviz Assistant - MCP Workflow",
+    "nodes": [
+      {
+        "parameters": {
+          "authentication": "",
+          "path": ""
+        },
+        "type": "@n8n/n8n-nodes-langchain.mcpTrigger",
+        "typeVersion": 1,
+        "position": [
+          -68,
+          -380
+        ],
+        "id": "",
+        "name": "MCP Server Trigger",
+        "webhookId": "",
+        "credentials": {
+          "httpBearerAuth": {
+            "id": "",
+            "name": ""
+          }
+        }
+      },
+      {
+        "parameters": {
+          "name": "BigQuerydryRun_SQL_Query",
+          "description": "Call this tool to send the final sql query to answer the user, it will be processed in dry run and you will have the amount of bytes that will be billed",
+          "workflowId": {
+            "__rl": true,
+            "value": "2xI30n8I3NTS2eSz",
+            "mode": "list",
+            "cachedResultName": "mcp-bq-sql-sh"
+          },
+          "workflowInputs": {
+            "mappingMode": "defineBelow",
+            "value": {
+              "sqlQuery": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('sqlQuery', `The SQL query that will be used for the dry run.`, 'string') }}"
+            },
+            "matchingColumns": [
+              "json_body"
+            ],
+            "schema": [
+              {
+                "id": "sqlQuery",
+                "displayName": "sqlQuery",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "canBeUsedToMatch": true,
+                "type": "string",
+                "removed": false
+              }
+            ],
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": false
+          }
+        },
+        "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+        "typeVersion": 2.1,
+        "position": [
+          380,
+          -140
+        ],
+        "id":  "",
+        "name": "BigQuery dryRun"
+      },
+      {
+        "parameters": {
+          "workflowInputs": {
+            "values": [
+              {
+                "name": "sqlQuery"
+              }
+            ]
+          }
+        },
+        "type": "n8n-nodes-base.executeWorkflowTrigger",
+        "typeVersion": 1.1,
+        "position": [
+          640,
+          -240
+        ],
+        "id":  "",
+        "name": "Execute dryRun"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://bigquery.googleapis.com/bigquery/v2/projects/<YOUR-PROJECT-ID>/jobs",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "oAuth2Api",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={\n  \"configuration\": {\n    \"query\": {\n      \"query\": \"{{\n  $json.sqlQuery\n    .replace(/FROM\\s+(?!`)([^\\s`]+)(\\s+)/gi, 'FROM `$1`$2')\n    .replace(/\\s*\\n\\s*/g, ' ')\n}}\",\n      \"useLegacySql\": false\n    },\n    \"dryRun\": true\n  }\n}\n",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          940,
+          -240
+        ],
+        "id":  "",
+        "name": "BigQuery dryRun via API",
+        "credentials": {
+          "googleBigQueryOAuth2Api": {
+            "id": "",
+            "name": ""
+          },
+          "oAuth2Api": {
+            "id": "",
+            "name": "bigquery"
+          }
+        },
+        "onError": "continueErrorOutput"
+      },
+      {
+        "parameters": {
+          "projectId": {
+            "__rl": true,
+            "value": "",
+            "mode": "list",
+            "cachedResultName": "",
+            "cachedResultUrl": "https://console.cloud.google.com/bigquery?project=<YOUR-PROJECT-ID>"
+          },
+          "sqlQuery": "SELECT column_name, data_type\nFROM `bigquery-public-data.ga4_obfuscated_sample_ecommerce.INFORMATION_SCHEMA.COLUMNS`\nWHERE table_name = '{{ $fromAI('tableName', 'The name of the table whose schema you want to retrieve. Only provide the table name. Exclude the project ID and dataset.')  }}';\n\n\n\n  ",
+          "options": {
+            "dryRun": false,
+            "maximumBytesBilled": "20000000"
+          }
+        },
+        "type": "n8n-nodes-base.googleBigQueryTool",
+        "typeVersion": 2.1,
+        "position": [
+          -300,
+          -160
+        ],
+        "id":  "",
+        "name": "Google BigQuery GetColumns",
+        "credentials": {
+          "googleBigQueryOAuth2Api": {
+            "id": "",
+            "name": ""
+          }
+        }
+      },
+      {
+        "parameters": {
+          "projectId": {
+            "__rl": true,
+            "value": "",
+            "mode": "list",
+            "cachedResultName": "",
+            "cachedResultUrl": "https://console.cloud.google.com/bigquery?project=<YOUR-PROJECT-ID>"
+          },
+          "sqlQuery": "SELECT \n  STRING_AGG(table_name, '\\n') AS table_list\nFROM `bigquery-public-data.ga4_obfuscated_sample_ecommerce.INFORMATION_SCHEMA.TABLES`\nWHERE STARTS_WITH(table_name, 'events_')\n  AND NOT STARTS_WITH(table_name, 'events_intraday_')",
+          "options": {
+            "dryRun": false,
+            "maximumBytesBilled": "20000000"
+          }
+        },
+        "type": "n8n-nodes-base.googleBigQueryTool",
+        "typeVersion": 2.1,
+        "position": [
+          80,
+          -160
+        ],
+        "id":  "",
+        "name": "Google BigQuery Get Table list",
+        "credentials": {
+          "googleBigQueryOAuth2Api": {
+            "id": "",
+            "name": ""
+          }
+        }
+      },
+      {
+        "parameters": {
+          "content": "\n\n\n\n\n\n\n\n\n\n\n\n\n## Google BigQuery GetColumns\n\nThis MCP tool allows the AI Agent to retrieve the **schema of a BigQuery table**.  \nIt helps the Agent design more accurate and relevant SQL queries.\n\n**Tip:**  \nAvoid using large raw data tables (as in the example workflow).  \nInstead, use **smaller, curated data marts**, ideally with **column descriptions** filled in.  \nThis may consume slightly more tokens, but it significantly improves the quality and reliability of the AI's output.\n",
+          "height": 580,
+          "width": 320,
+          "color": 7
+        },
+        "type": "n8n-nodes-base.stickyNote",
+        "typeVersion": 1,
+        "position": [
+          -400,
+          -180
+        ],
+        "id": "",
+        "name": "Sticky Note"
+      },
+      {
+        "parameters": {
+          "content": "\n\n\n\n\n\n\n\n\n\n\n\n\n## Google BigQuery Get Table List\n\nThis MCP tool allows the AI Agent to retrieve the list of tables available in the dataset it has access to.  \nThis helps the Agent determine **which table to query** when building the SQL.\n\n⚠️ **Note:** In native Google Analytics 4 → BigQuery datasets (as in this example), there is **one table per day**.  \nThis increases token usage when fetching the full list of tables.\n\n**Tip:**  \nCreate **aggregated tables**, ideally **partitioned by date**, to reduce both cost and complexity.\n\n",
+          "height": 580,
+          "width": 320,
+          "color": 7
+        },
+        "type": "n8n-nodes-base.stickyNote",
+        "typeVersion": 1,
+        "position": [
+          -60,
+          -180
+        ],
+        "id": "",
+        "name": "Sticky Note1"
+      },
+      {
+        "parameters": {
+          "content": "\n\n\n\n\n\n\n\n\n\n\n\n\n## BigQuery dryRun\n\nThis MCP tool allows the AI Agent to **simulate the execution** of a BigQuery query in response to the user's request.  \nThis simulation has **no cost**, and the estimated **bytes processed** are returned.\n\nThe Agent then uses this information to **propose to the user** whether or not the live query should be executed, based on the estimated cost.\n\n**Reminder:**  \nLLMs are non-deterministic. In rare cases, the model (`gpt-4.1-mini`) may **skip this step**.  \nThat’s why it’s strongly recommended to configure a `maximumBytesBilled` limit in the main workflow.\n",
+          "height": 580,
+          "width": 320,
+          "color": 7
+        },
+        "type": "n8n-nodes-base.stickyNote",
+        "typeVersion": 1,
+        "position": [
+          280,
+          -180
+        ],
+        "id": "",
+        "name": "Sticky Note2"
+      },
+      {
+        "parameters": {
+          "content": "## BigQuery dryRun via API\n\nThis node performs the actual **API call to BigQuery** to run the `dryRun`.\n\nAn **HTTP Request node** is used instead of the native n8n BigQuery node because, when the `dryRun` option was enabled in the native node, it **still executed the query**, resulting in billing.\n\nAn error output is configured and routed back to the AI Agent.  \nThis is useful because BigQuery returns detailed error messages during dry runs when the SQL is invalid.  \nThe AI Agent is then prompted to correct the query based on this feedback.\n",
+          "height": 520,
+          "width": 380,
+          "color": 7
+        },
+        "type": "n8n-nodes-base.stickyNote",
+        "typeVersion": 1,
+        "position": [
+          800,
+          -600
+        ],
+        "id": "",
+        "name": "Sticky Note3"
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "",
+                "name": "dryRunStatus",
+                "value": "={{ $json.status.state }}",
+                "type": "string"
+              },
+              {
+                "id": "",
+                "name": "sqlQueryDryRun",
+                "value": "={{ $json.configuration.query.query }}",
+                "type": "string"
+              },
+              {
+                "id": "",
+                "name": "totalBytesProcessed",
+                "value": "={{ $json.statistics.query.totalBytesProcessed }}",
+                "type": "string"
+              },
+              {
+                "id": "",
+                "name": "estimatedTotalMbProcessed",
+                "value": "={{ Number(($json.statistics.query.totalBytesProcessed / 1000000).toFixed(2)) }}",
+                "type": "number"
+              },
+              {
+                "id": "",
+                "name": "cacheHit",
+                "value": "={{ $json.statistics.query.cacheHit }}",
+                "type": "string"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          1300,
+          -340
+        ],
+        "id": "",
+        "name": "Set druRun Success Data for AI Agent"
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "",
+                "name": "dryRunResponse",
+                "value": "=A dry-run error has occurred.\n\n## SQL query attempted during dry run\n{{ $json.sqlQuery }}\n\n## Error details\n{{ $json.error.toJsonString() }}\n\n## Instructions for the AI\n*   **SQL Query Related Errors:** If the error indicates a problem within the SQL statement itself (e.g., unknown field name, incorrect SQL keyword usage, syntax error), attempt to resolve it silently. Consider using `Google_BigQuery_Get_Table_List` and then `Google_BigQuery_Get_Columns` to verify table/column names or syntax. **Do not notify the user** during this internal resolution attempt.\n*   **Other Errors:** For all other types of errors (e.g., permissions, internal BigQuery issues), inform the user that an error occurred preventing the dry run, without revealing specific technical details.",
+                "type": "string"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          1300,
+          -140
+        ],
+        "id": "",
+        "name": "Set druRun Error Prompt for AI Agent"
+      }
+    ],
+    "pinData": {
+      "Execute dryRun": [
+        {
+          "json": {
+            "sql_query": "WITH unique_visitors_per_day AS (\n  SELECT\n    PARSE_DATE('%Y%m%d', event_date) AS date,\n    user_pseudo_id\n  FROM `bigquery-public-data.ga4_obfuscated_sample_ecommerce.events_*`\n  WHERE _TABLE_SUFFIX BETWEEN '20201101' AND '20201110'\n  GROUP BY date, user_pseudo_id\n)\nSELECT\n  date,\n  COUNT(DISTINCT user_pseudo_id) AS unique_visitors\nFROM unique_visitors_per_day\nGROUP BY date\nORDER BY date\nLIMIT 100"
+          }
+        }
+      ]
+    },
+    "connections": {
+      "BigQuery dryRun": {
+        "ai_tool": [
+          [
+            {
+              "node": "MCP Server Trigger",
+              "type": "ai_tool",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Execute dryRun": {
+        "main": [
+          [
+            {
+              "node": "BigQuery dryRun via API",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "BigQuery dryRun via API": {
+        "main": [
+          [
+            {
+              "node": "Set druRun Success Data for AI Agent",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Set druRun Error Prompt for AI Agent",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Google BigQuery GetColumns": {
+        "ai_tool": [
+          [
+            {
+              "node": "MCP Server Trigger",
+              "type": "ai_tool",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Google BigQuery Get Table list": {
+        "ai_tool": [
+          [
+            {
+              "node": "MCP Server Trigger",
+              "type": "ai_tool",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "active": false,
+    "settings": {
+      "executionOrder": "v1"
+    },
+    "versionId": "",
+    "meta": {
+      "templateCredsSetupCompleted": true,
+      "instanceId": ""
+    },
+    "id": "",
+    "tags": []
+  }
