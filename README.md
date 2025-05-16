@@ -81,6 +81,7 @@ pip install -r requirements.txt
 ```
 streamlit==1.45.1
 plotly==6.0.1
+pandas==2.2.3
 ```
 
 ---
