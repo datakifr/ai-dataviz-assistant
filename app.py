@@ -581,7 +581,7 @@ def call_n8n_webhook(prompt: str) -> dict | list | None:
 
 
 # --- Main Streamlit Application Setup ---
-st.set_page_config(page_title="AI Chart Assistant", page_icon="📊", layout="wide")
+st.set_page_config(page_title="AI Dataviz Assistant", page_icon="📊", layout="wide")
 
 # --- Sidebar for Session Information and Controls ---
 with st.sidebar:
