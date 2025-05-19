@@ -299,7 +299,7 @@
                 "id": "",
                 "name": "=aiRunIndex",
                 "value": "={{ $node[\"AI Agent\"].runIndex }} ",
-                "type": "string"
+                "type": "number"
               }
             ]
           },
@@ -465,7 +465,7 @@
                 "id": "",
                 "name": "=bqRunIndex",
                 "value": "={{ $node[\"Run BigQuery SQL\"].runIndex }} ",
-                "type": "string"
+                "type": "number"
               },
               {
                 "id": "",
