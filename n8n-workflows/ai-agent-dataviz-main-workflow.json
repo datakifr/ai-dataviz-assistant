@@ -650,8 +650,8 @@
       },
       {
         "parameters": {
-          "content": "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n## Set BQ Error & Run Index\n\nIf the BigQuery request fails, two parameters are set:\n\n- `error`: Indicates the type of error that occurred  \n- `bqRunIndex`: Tracks the number of retry attempts\n\nIf the error is due to an SQL issue, the AI Agent will be prompted to retry.  \nHowever, if the error is related to `maximumBytesBilled` being exceeded, the user will be informed directly.\n\nThe workflow allows up to 3 retry attempts, managed via the `bqRunIndex`.\n",
-          "height": 600,
+          "content": "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n## Set BQ Error & Run Index\n\n ## ⚠️ Risk of Infinite Loop – Proceed with Caution\n\nIf the **BigQuery** node output is an error, it will be sent back to the **AI Agent**.\n\nThis workflow uses a `runIndex` variable, checked in the next node, to limit the loop to a maximum of **3 iterations** through the **AI Agent** and **3 iterations** on the **Run BigQuery SQL** node, **preventing an infinite loop**.\n\n**Make sure you fully understand this behavior before making any modifications.** \n\nIf the BigQuery request fails, two parameters are set:\n\n- `error`: Indicates the type of error that occurred  \n- `bqRunIndex`: Tracks the number of retry attempts\n\nIf the error is due to an SQL issue, the AI Agent will be prompted to retry.  \nHowever, if the error is related to `maximumBytesBilled` being exceeded, the user will be informed directly.\n\nThe workflow allows up to 3 retry attempts, managed via the `bqRunIndex`.\n",
+          "height": 920,
           "width": 360,
           "color": 7
         },
@@ -698,7 +698,7 @@
       },
       {
         "parameters": {
-          "content": "## Switch\n\nThere are 4 possible routes:\n\n- `dataToDisplayFalse`: No data needs to be displayed (e.g., after a simple answer or a dry run).  \n  This route ends the workflow without triggering a BigQuery call.\n\n- `dataToDisplayTrue`: Data visualizations are expected in the Streamlit interface.  \n  This route will trigger a SQL query execution on BigQuery.\n\n- `JSONError`: An error was detected in the AI Agent’s output JSON.  \n  This route routes through a `Set` node that writes an error prompt to the AI Agent, prompting it to retry with the correct format.  \n  This route is only taken if `aiRunIndex` is less than 2.\n\n- `Fallback`: None of the above routes matched.  \n  An error message is sent to the user in the Streamlit interface.\n",
+          "content": "## Switch\n\nThere are 4 possible routes.\n\n ## ⚠️ Risk of Infinite Loop – Proceed with Caution\n\nIf the AI Agent's **JSON output does not match the expected schema**, it will be **sent back to the AI Agent**.\n\nThis workflow uses a **`runIndex` variable checked in this node** to limit the loop to a maximum of 3 iterations through the AI Agent, **preventing an infinite loop**.\n\nMake sure **you fully understand this behavior before making any modifications**. - `dataToDisplayFalse`: No data needs to be displayed (e.g., after a simple answer or a dry run).  \n  This route ends the workflow without triggering a BigQuery call.\n\n- `dataToDisplayTrue`: Data visualizations are expected in the Streamlit interface.  \n  This route will trigger a SQL query execution on BigQuery.\n\n- `JSONError`: An error was detected in the AI Agent’s output JSON.  \n  This route routes through a `Set` node that writes an error prompt to the AI Agent, prompting it to retry with the correct format.  \n  This route is only taken if `aiRunIndex` is less than 2.\n\n- `Fallback`: None of the above routes matched.  \n  An error message is sent to the user in the Streamlit interface.\n",
           "height": 660,
           "width": 540,
           "color": 7
